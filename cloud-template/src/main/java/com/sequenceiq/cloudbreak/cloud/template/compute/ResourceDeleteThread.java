@@ -65,6 +65,7 @@ public class ResourceDeleteThread implements Callable<ResourceRequestResult<List
         if (resource.getStatus() == CommonStatus.CREATED) {
             CloudResource deletedResource;
             try {
+                // somehow attachmentdeletebuilder delete is called for volumeset
                 deletedResource = builder.delete(context, auth, resource);
             } catch (InterruptedException ignored) {
                 LOGGER.debug("Preserve resource for later use.");

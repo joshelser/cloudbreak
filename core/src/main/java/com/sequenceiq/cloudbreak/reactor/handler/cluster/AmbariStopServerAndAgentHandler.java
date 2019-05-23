@@ -14,6 +14,8 @@ import com.sequenceiq.cloudbreak.domain.stack.Stack;
 import com.sequenceiq.cloudbreak.orchestrator.host.HostOrchestrator;
 import com.sequenceiq.cloudbreak.orchestrator.model.GatewayConfig;
 import com.sequenceiq.cloudbreak.orchestrator.model.Node;
+import com.sequenceiq.cloudbreak.service.blueprint.BlueprintTextProcessorUtil;
+import com.sequenceiq.cloudbreak.template.processor.ClusterManagerType;
 import com.sequenceiq.flow.event.EventSelectorUtil;
 import com.sequenceiq.cloudbreak.reactor.api.event.cluster.AmbariStopServerAndAgentRequest;
 import com.sequenceiq.cloudbreak.reactor.api.event.cluster.AmbariStopServerAndAgentResult;
@@ -59,7 +61,8 @@ public class AmbariStopServerAndAgentHandler implements EventHandler<AmbariStopS
             GatewayConfig primaryGatewayConfig = gatewayConfigService.getPrimaryGatewayConfig(stack);
             Set<Node> allNodes = stackUtil.collectNodes(stack);
 
-            hostOrchestrator.stopAmbariOnMaster(primaryGatewayConfig, allNodes, clusterDeletionBasedModel(stack.getId(), stack.getCluster().getId()));
+            hostOrchestrator.stopClusterManagerOnMaster(primaryGatewayConfig, allNodes, clusterDeletionBasedModel(stack.getId(), stack.getCluster().getId()),
+                    BlueprintTextProcessorUtil.getClusterManagerType(stack.getCluster().getBlueprint().getBlueprintText()).equals(ClusterManagerType.CLOUDERA_MANAGER));
             result = new AmbariStopServerAndAgentResult(request);
         } catch (Exception e) {
             String message = "Failed to start ambari agent and/or server on new host.";

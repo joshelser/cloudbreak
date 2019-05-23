@@ -40,7 +40,6 @@ import org.springframework.util.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.common.DatabaseVendor;
-import com.sequenceiq.cloudbreak.api.endpoint.v4.common.ResourceStatus;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.common.Status;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.database.base.DatabaseType;
 import com.sequenceiq.cloudbreak.api.endpoint.v4.stacks.base.InstanceStatus;
@@ -642,11 +641,11 @@ public class ClusterService {
     }
 
     private void checkReattachSupportForGateways(Stack inTransactionStack, boolean repairWithReattach, Cluster cluster, HostMetadata hmd) {
-        boolean ambariRdsPresent = cluster.getRdsConfigs().stream()
-                .anyMatch(rdsConfig -> "AMBARI".equals(rdsConfig.getType()) && ResourceStatus.USER_MANAGED.equals(rdsConfig.getStatus()));
+        boolean clusterManagerRdsPresent = cluster.getRdsConfigs().stream()
+                .anyMatch(rdsConfig -> ("AMBARI".equals(rdsConfig.getType()) || "CLOUDERA_MANAGER".equals(rdsConfig.getType())));
         boolean singleNodeGateway = isGateway(hmd) && !isMultipleGateway(inTransactionStack);
-        if (repairWithReattach && !ambariRdsPresent && singleNodeGateway) {
-            throw new BadRequestException("Repair with disk reattach not supported on single node gateway without external Ambari RDS.");
+        if (repairWithReattach && !clusterManagerRdsPresent && singleNodeGateway) {
+            throw new BadRequestException("Repair with disk reattach not supported on single node gateway without external cluster manager RDS.");
         }
     }
 
@@ -698,7 +697,7 @@ public class ClusterService {
 //        if (!repairWithReattach && (isGateway(hostMetadata) && !isMultipleGateway(stack))) {
 //            throw new BadRequestException("Ambari server failure cannot be repaired with single gateway!");
 //        }
-        if (isGateway(hostMetadata) && withEmbeddedAmbariDB(stack.getCluster())) {
+        if (isGateway(hostMetadata) && withEmbeddedDB(stack.getCluster())) {
             throw new BadRequestException("Ambari server failure with embedded database cannot be repaired!");
         }
     }
@@ -735,8 +734,11 @@ public class ClusterService {
         return hostMetadata.getHostGroup().getConstraint().getInstanceGroup().getInstanceGroupType() == InstanceGroupType.GATEWAY;
     }
 
-    private boolean withEmbeddedAmbariDB(Cluster cluster) {
+    private boolean withEmbeddedDB(Cluster cluster) {
         RDSConfig rdsConfig = rdsConfigService.findByClusterIdAndType(cluster.getId(), DatabaseType.AMBARI);
+        if (rdsConfig == null) {
+            rdsConfig = rdsConfigService.findByClusterIdAndType(cluster.getId(), DatabaseType.CLOUDERA_MANAGER);
+        }
         return rdsConfig == null || DatabaseVendor.EMBEDDED == rdsConfig.getDatabaseEngine();
     }
 
@@ -894,7 +896,7 @@ public class ClusterService {
             Stack stackWithLists = stackService.getByIdWithListsInTransaction(stack.getId());
             Cluster cluster = getCluster(stackWithLists);
             Blueprint blueprint = blueprintService.getByNameForWorkspace(blueprintName, stack.getWorkspace());
-            if (!withEmbeddedAmbariDB(cluster)) {
+            if (!withEmbeddedDB(cluster)) {
                 throw new BadRequestException("Ambari doesn't support resetting external DB automatically. To reset Ambari Server schema you must first drop "
                         + "and then create it using DDL scripts from /var/lib/ambari-server/resources");
             }

@@ -14,13 +14,15 @@ import com.sequenceiq.cloudbreak.domain.stack.Stack;
 import com.sequenceiq.cloudbreak.orchestrator.host.HostOrchestrator;
 import com.sequenceiq.cloudbreak.orchestrator.model.GatewayConfig;
 import com.sequenceiq.cloudbreak.orchestrator.model.Node;
-import com.sequenceiq.flow.event.EventSelectorUtil;
 import com.sequenceiq.cloudbreak.reactor.api.event.cluster.AmbariStartServerAndAgentRequest;
 import com.sequenceiq.cloudbreak.reactor.api.event.cluster.StartServerAndAgentResult;
-import com.sequenceiq.flow.reactor.api.handler.EventHandler;
 import com.sequenceiq.cloudbreak.service.GatewayConfigService;
+import com.sequenceiq.cloudbreak.service.blueprint.BlueprintTextProcessorUtil;
 import com.sequenceiq.cloudbreak.service.stack.StackService;
+import com.sequenceiq.cloudbreak.template.processor.ClusterManagerType;
 import com.sequenceiq.cloudbreak.util.StackUtil;
+import com.sequenceiq.flow.event.EventSelectorUtil;
+import com.sequenceiq.flow.reactor.api.handler.EventHandler;
 
 import reactor.bus.Event;
 import reactor.bus.EventBus;
@@ -59,7 +61,8 @@ public class AmbariStartServerAndAgentHandler implements EventHandler<AmbariStar
             GatewayConfig primaryGatewayConfig = gatewayConfigService.getPrimaryGatewayConfig(stack);
             Set<Node> allNodes = stackUtil.collectNodes(stack);
 
-            hostOrchestrator.startAmbariOnMaster(primaryGatewayConfig, allNodes, clusterDeletionBasedModel(stack.getId(), stack.getCluster().getId()));
+            hostOrchestrator.startClusterManagerOnMaster(primaryGatewayConfig, allNodes, clusterDeletionBasedModel(stack.getId(), stack.getCluster().getId()),
+                    BlueprintTextProcessorUtil.getClusterManagerType(stack.getCluster().getBlueprint().getBlueprintText()).equals(ClusterManagerType.CLOUDERA_MANAGER));
             result = new StartServerAndAgentResult(request);
         } catch (Exception e) {
             String message = "Failed to start ambari agent and/or server on new host.";

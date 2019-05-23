@@ -53,6 +53,8 @@ public class ClouderaManagerModificationService implements ClusterModificationSe
 
     private static final Boolean START_ROLES_ON_UPSCALED_NODES = Boolean.TRUE;
 
+    private static final String FULL_VIEW = "FULL";
+
     @Inject
     private ClouderaManagerClientFactory clouderaManagerClientFactory;
 
@@ -249,17 +251,44 @@ public class ClouderaManagerModificationService implements ClusterModificationSe
 
     @Override
     public Map<String, String> gatherInstalledComponents(String hostname) {
+//        ServicesResourceApi servicesResourceApi = clouderaManagerClientFactory.getServicesResourceApi(client);
+//        try {
+//            Map<String, String> result = Maps.newHashMap();
+//            servicesResourceApi.readServices(stack.getName(), FULL_VIEW).getItems().stream()
+//                    .filter(service -> service.getRoles().stream().filter(role -> StringUtils.equals(hostname, role.getHostRef() != null ? role.getHostRef().getHostname() : null)).findFirst().isPresent())
+//                    .forEach(service -> result.put(service.getName(), service.getType()));
+//            return result;
+//        } catch (ApiException e) {
+//            // TODO
+//        }
         return Map.of();
     }
 
     @Override
     public void stopComponents(Map<String, String> components, String hostname) {
-
+//        ServicesResourceApi servicesResourceApi = clouderaManagerClientFactory.getServicesResourceApi(client);
+//        components.keySet().stream().forEach(component -> {
+//            try {
+//                servicesResourceApi.stopCommand(stack.getName(), component);
+//            } catch (ApiException e) {
+//                // TODO
+//            }
+//        });
     }
 
     @Override
     public void ensureComponentsAreStopped(Map<String, String> components, String hostname) {
-
+//        ServicesResourceApi servicesResourceApi = clouderaManagerClientFactory.getServicesResourceApi(client);
+//        components.keySet().stream().forEach(component -> {
+//            try {
+//                ApiService apiService = servicesResourceApi.readService(stack.getName(), component, FULL_VIEW);
+//                if (!apiService.getServiceState().equals(ApiServiceState.STOPPED)) {
+//                    servicesResourceApi.stopCommand(stack.getName(), component);
+//                }
+//            } catch (ApiException e) {
+//                // TODO
+//            }
+//        });
     }
 
     @Override
@@ -269,7 +298,20 @@ public class ClouderaManagerModificationService implements ClusterModificationSe
 
     @Override
     public void installComponents(Map<String, String> components, String hostname) {
-
+//        ServicesResourceApi servicesResourceApi = clouderaManagerClientFactory.getServicesResourceApi(client);
+//        ApiServiceList body = new ApiServiceList();
+//        body.setItems(Lists.newArrayList());
+//        components.entrySet().stream().forEach(entry -> {
+//            ApiService apiService = new ApiService();
+//            apiService.setName(entry.getKey());
+//            apiService.setType(entry.getValue());
+//            body.getItems().add(apiService);
+//        });
+//        try {
+//            servicesResourceApi.createServices(stack.getName(), body);
+//        } catch (ApiException e) {
+//            // TODO
+//        }
     }
 
     @Override
@@ -279,7 +321,17 @@ public class ClouderaManagerModificationService implements ClusterModificationSe
 
     @Override
     public void startComponents(Map<String, String> components, String hostname) {
-
+//        ServicesResourceApi servicesResourceApi = clouderaManagerClientFactory.getServicesResourceApi(client);
+//        components.keySet().stream().forEach(component -> {
+//            try {
+//                ApiService apiService = servicesResourceApi.readService(stack.getName(), component, FULL_VIEW);
+//                if (!apiService.getServiceState().equals(ApiServiceState.STOPPED)) {
+//                    servicesResourceApi.startCommand(stack.getName(), component);
+//                }
+//            } catch (ApiException e) {
+//                // TODO
+//            }
+//        });
     }
 
     @Override

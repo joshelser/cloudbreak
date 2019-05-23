@@ -95,7 +95,12 @@ public class AwsAttachmentResourceBuilder extends AbstractAwsComputeBuilder {
     }
 
     @Override
-    public CloudResource delete(AwsContext context, AuthenticatedContext auth, CloudResource resource) {
+    public CloudResource delete(AwsContext context, AuthenticatedContext auth, CloudResource resource) throws InterruptedException {
+        if (resource.getType().equals(ResourceType.AWS_VOLUMESET)) {
+            // somehow attachmentdeletebuilder delete is called for volumeset
+            LOGGER.debug("Volumes will be preserved.");
+            throw new InterruptedException("Resource will be preserved for later reattachment.");
+        }
         return null;
     }
 
