@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.stereotype.Component;
 
@@ -47,14 +48,23 @@ public class KnoxGatewayConfigProvider extends AbstractRoleConfigProvider {
 
     private static final String GATEWAY_WHITELIST = "gateway_dispatch_whitelist";
 
+    // TODO Move over to TemplatePreparationObject and its initializer class; replace with a more general value
+    private static final String ID_BROKER_DATA_ACCESS_ROLE = "arn:aws:iam::980678866538:role/lrodek-ec2-role-user-lrodek";
+
+    // TODO Move over to TemplatePreparationObject and its initializer class; replace with a more general value
+    private static final String ID_BROKER_CLUSTER_CREATOR_USER = "lrodek";
+
+    // TODO Move over to TemplatePreparationObject and its initializer class; incomplete
+    private static final Set<String> ID_BROKER_DATA_ACCESS_SERVICES = Set.of("yarn", "hdfs", "hive", "ranger", "atlas", "kafka", "solr");
+
     @Override
     protected List<ApiClusterTemplateConfig> getRoleConfigs(String roleType, TemplatePreparationObject source) {
         GatewayView gateway = source.getGatewayView();
         String masterSecret = gateway != null ? gateway.getMasterSecret() : source.getGeneralClusterConfigs().getPassword();
 
+        List<ApiClusterTemplateConfig> config = new ArrayList<>();
         switch (roleType) {
             case KnoxRoles.KNOX_GATEWAY:
-                List<ApiClusterTemplateConfig> config = new ArrayList<>();
                 config.add(config(KNOX_MASTER_SECRET, masterSecret));
                 Optional<KerberosConfig> kerberosConfig = source.getKerberosConfig();
                 if (gateway != null) {
@@ -71,7 +81,16 @@ public class KnoxGatewayConfigProvider extends AbstractRoleConfigProvider {
                 }
                 return config;
             case KnoxRoles.IDBROKER:
-                return List.of(config("idbroker_master_secret", masterSecret));
+                config.add(config("idbroker_master_secret", masterSecret));
+                // TODO Fetch mappings from TemplatePreparationObject
+                // TODO Determine cloud platform from TemplatePreparationObject
+                // TODO Set mappings for Azure and GCP
+                String userMapping = Stream.concat(List.of(ID_BROKER_CLUSTER_CREATOR_USER).stream(), ID_BROKER_DATA_ACCESS_SERVICES.stream())
+                        .map(s -> String.format("%s=%s", s, ID_BROKER_DATA_ACCESS_ROLE))
+                        .collect(Collectors.joining(";"));
+                config.add(config("idbroker_aws_user_mapping", userMapping));
+                config.add(config("idbroker_aws_group_mapping", ""));
+                return config;
             default:
                 return List.of();
         }
