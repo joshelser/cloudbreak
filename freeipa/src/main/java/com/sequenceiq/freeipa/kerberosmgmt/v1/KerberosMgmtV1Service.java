@@ -1,5 +1,6 @@
 package com.sequenceiq.freeipa.kerberosmgmt.v1;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.Set;
@@ -108,14 +109,29 @@ public class KerberosMgmtV1Service {
         return response;
     }
 
-    public void deleteServicePrincipal(ServicePrincipalRequest request, String accountId) {
-        //TODO  Will be implemented CDPSDX-515
-        return;
+    public void deleteServicePrincipal(ServicePrincipalRequest request, String accountId) throws FreeIpaClientException {
+        FreeIpaClient ipaClient;
+        Stack freeIpaStack = getFreeIpaStack(request.getEnvironmentCrn(), accountId);
+        String realm = getRealm(freeIpaStack);
+        String canonicalPrincipal = constructCanonicalPrincipal(request.getServiceName(), request.getServerHostName(), realm);
+        ipaClient = freeIpaClientFactory.getFreeIpaClientForStack(freeIpaStack);
+        ipaClient.deleteService(canonicalPrincipal);
     }
 
-    public void deleteHost(HostRequest request, String accountId) {
-        //TODO  Will be implemented CDPSDX-515
-        return;
+    public void deleteHost(HostRequest request, String accountId) throws FreeIpaClientException {
+        FreeIpaClient ipaClient;
+        Stack freeIpaStack = getFreeIpaStack(request.getEnvironmentCrn(), accountId);
+        ipaClient = freeIpaClientFactory.getFreeIpaClientForStack(freeIpaStack);
+
+        Map<String, String> principalCanonicalMap = ipaClient.findAllService().stream()
+                .collect(Collectors.toMap(com.sequenceiq.freeipa.client.model.Service::getKrbprincipalname,
+                        com.sequenceiq.freeipa.client.model.Service::getKrbcanonicalname));
+        Set<String> services = principalCanonicalMap.entrySet().stream().filter(e -> e.getKey().contains(request.getServerHostName()))
+                .map(Map.Entry::getValue).collect(Collectors.toSet());
+        for (String service : services) {
+            ipaClient.deleteService(service);
+        }
+        ipaClient.deleteHost(request.getServerHostName());
     }
 
     private Stack getFreeIpaStack(String envCrn, String accountId) {
@@ -149,7 +165,8 @@ public class KerberosMgmtV1Service {
 
     private com.sequenceiq.freeipa.client.model.Service serviceAdd(ServiceKeytabRequest request, String realm, FreeIpaClient ipaClient)
             throws KeytabCreationException {
-        String canonicalPrincipal = request.getServiceName() + "/" + request.getServerHostName() + "@" + realm;
+        String canonicalPrincipal = constructCanonicalPrincipal(request.getServiceName(),
+                request.getServerHostName(), realm);
         com.sequenceiq.freeipa.client.model.Service service;
         try {
             try {
@@ -264,5 +281,9 @@ public class KerberosMgmtV1Service {
     private String constructVaultPath(String accountId, String type, String subtype) {
         return String.format("%s/%s/%s/%s-%s", accountId, type, subtype,
                 UUID.randomUUID().toString(), Long.toHexString(System.currentTimeMillis()));
+    }
+
+    public static String constructCanonicalPrincipal(String serviceName, String hostName, String realm) {
+        return serviceName + "/" + hostName + "@" + realm;
     }
 }
