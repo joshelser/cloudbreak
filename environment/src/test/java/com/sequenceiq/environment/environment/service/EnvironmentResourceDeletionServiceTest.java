@@ -83,9 +83,9 @@ class EnvironmentResourceDeletionServiceTest {
     void getAttachedDistroXClusterNames() {
         when(cloudbreakClient.withCrn(any())).thenReturn(endpoint);
         when(endpoint.distroXV1Endpoint()).thenReturn(distroXEndpoint);
-        when(distroXEndpoint.list(anyString())).thenReturn(new StackViewV4Responses());
+        when(distroXEndpoint.list(anyString(), anyString())).thenReturn(new StackViewV4Responses());
         environmentResourceDeletionServiceUnderTest.getAttachedDistroXClusterNames(environment);
-        verify(distroXEndpoint).list(eq(ENVIRONMENT_NAME));
+        verify(distroXEndpoint).list(eq(ENVIRONMENT_NAME), eq(null));
     }
 
     @Test
