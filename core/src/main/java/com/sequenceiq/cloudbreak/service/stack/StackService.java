@@ -430,7 +430,7 @@ public class StackService {
         try {
             return transactionService.required(() -> {
                 ShowTerminatedClustersAfterConfig showTerminatedClustersAfterConfig = showTerminatedClusterConfigService.get();
-                Optional<Stack> stack = findByCrnAndWorkspaceIdWithLists(crn, workspaceId, null , showTerminatedClustersAfterConfig);
+                Optional<Stack> stack = findByCrnAndWorkspaceIdWithLists(crn, workspaceId, null, showTerminatedClustersAfterConfig);
                 if (stack.isEmpty()) {
                     throw new NotFoundException(String.format(STACK_NOT_FOUND_BY_NAME_EXCEPTION_MESSAGE, crn));
                 }
