@@ -45,7 +45,7 @@ public interface CredentialRepository extends JpaRepository<Credential, Long> {
     @Query("SELECT c FROM Credential c JOIN Environment e ON e.credential.id = c.id WHERE e.name = :envName AND c.accountId = :accountId "
             + "AND c.accountId = :accountId AND c.archived IS FALSE AND c.cloudPlatform IN (:cloudPlatforms)")
     Optional<Credential> findByEnvironmentNameAndAccountId(
-            @Param("envCrn") String envName,
+            @Param("envName") String envName,
             @Param("accountId") String accountId,
             @Param("cloudPlatforms") Collection<String> cloudPlatforms);
 }
